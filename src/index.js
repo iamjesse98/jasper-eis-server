@@ -10,7 +10,7 @@ import config from '../config.json'
 const PORT = config.port
 const app = express()
 app.server = http.createServer(app)
-const io = listen(app.server)
+const io = listen(app.server, { pingTimeout: 30000 })
 
 // all http routes here
 app.get('/*', (req, res) => res.send('hello')) // TODO: render the actual frontend
@@ -19,6 +19,7 @@ app.get('/*', (req, res) => res.send('hello')) // TODO: render the actual fronte
 io.sockets.on('connection', socket => {
     console.log('A fucker just joined on', socket.id)
     socket.on('message', data => {
+    	// process the message here... using nlp techniques
     	socket.emit('reply', { message: data.msg })
     })
 })
