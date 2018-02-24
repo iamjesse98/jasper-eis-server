@@ -2,6 +2,7 @@
 import express from 'express' // for rendering documents and handling requests
 import http from 'http' // http connects both express and socket.io
 import { listen } from 'socket.io' // for real time data streaming
+import PythonShell from 'python-shell' // for doing nlp
 
 // all relative imports here
 import config from '../config.json' // this file contains all the configs.
@@ -20,7 +21,17 @@ io.sockets.on('connection', socket => {
     console.log('A fucker just joined on', socket.id)
     socket.on('message', data => {
     	// process the message here... using nlp techniques, then emit the reply to client and also to raspberry pi server
-    	socket.emit('reply', { message: data.msg })
+        const options = {
+            mode: 'text',
+            scriptPath: __dirname + '/../',
+            args: [ data.msg ]
+        }
+        PythonShell.run('nlp.py', options, (err, results) => {
+            if (err) throw err;
+            // results is an array consisting of messages collected during execution
+            console.log(results[0]);
+        })
+        socket.emit('reply', { message: data.msg })
     })
 })
 
