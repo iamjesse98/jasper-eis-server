@@ -10,9 +10,9 @@ var _http2 = _interopRequireDefault(_http);
 
 var _socket = require('socket.io');
 
-var _pythonShell = require('python-shell');
+var _compromise = require('compromise');
 
-var _pythonShell2 = _interopRequireDefault(_pythonShell);
+var _compromise2 = _interopRequireDefault(_compromise);
 
 var _config = require('../config.json');
 
@@ -24,8 +24,11 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 // global variables
 // for real time data streaming
+// import PythonShell from 'python-shell' // for doing nlp
 // for rendering documents and handling requests
-var PORT = _config2.default.port; // for doing nlp
+var PORT = _config2.default.port; // for nlp
+
+// console.log(nlp(`Turn on the lights.`).normalize().out('text'))
 
 // all relative imports here
 // http connects both express and socket.io
@@ -45,16 +48,22 @@ io.sockets.on('connection', function (socket) {
     console.log('A fucker just joined on', socket.id);
     socket.on('message', function (data) {
         // process the message here... using nlp techniques, then emit the reply to client and also to raspberry pi server
-        var options = {
-            mode: 'text',
-            scriptPath: __dirname + '/../',
-            args: [data.msg]
-        };
-        _pythonShell2.default.run('nlp.py', options, function (err, results) {
-            if (err) throw err;
-            // results is an array consisting of messages collected during execution
-            console.log(results[0]);
-        });
+        // const options = {
+        //     mode: 'text',
+        //     scriptPath: __dirname + '/../',
+        //     args: [ data.msg ]
+        // }
+        // PythonShell.run('nlp.py', options, (err, results) => {
+        //     if (err) throw err;
+        //     // results is an array consisting of messages collected during execution
+        //     console.log(results[0]);
+        // })
+        var message = data.msg;
+        var normailzed_message = (0, _compromise2.default)(data.msg).normalize().out('text');
+        var verbs = (0, _compromise2.default)(normailzed_message).verbs().out('array');
+        var nouns = (0, _compromise2.default)(normailzed_message).nouns().out('array').length;
+        var isQuestion = (0, _compromise2.default)(normailzed_message).questions().out('array').length > 0;
+        console.log('\uD83D\uDC31\u200D\uD83D\uDC64Verbs:\n' + verbs + '\n\u2728Nouns:\n' + nouns + '\n\uD83D\uDE4B\u200DQuestion:\n' + isQuestion);
         socket.emit('reply', { message: data.msg });
     });
 });

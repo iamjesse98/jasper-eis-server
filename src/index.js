@@ -2,7 +2,10 @@
 import express from 'express' // for rendering documents and handling requests
 import http from 'http' // http connects both express and socket.io
 import { listen } from 'socket.io' // for real time data streaming
-import PythonShell from 'python-shell' // for doing nlp
+// import PythonShell from 'python-shell' // for doing nlp
+import nlp from 'compromise' // for nlp
+
+// console.log(nlp(`Turn on the lights.`).normalize().out('text'))
 
 // all relative imports here
 import config from '../config.json' // this file contains all the configs.
@@ -21,16 +24,23 @@ io.sockets.on('connection', socket => {
     console.log('A fucker just joined on', socket.id)
     socket.on('message', data => {
     	// process the message here... using nlp techniques, then emit the reply to client and also to raspberry pi server
-        const options = {
-            mode: 'text',
-            scriptPath: __dirname + '/../',
-            args: [ data.msg ]
-        }
-        PythonShell.run('nlp.py', options, (err, results) => {
-            if (err) throw err;
-            // results is an array consisting of messages collected during execution
-            console.log(results[0]);
-        })
+        // const options = {
+        //     mode: 'text',
+        //     scriptPath: __dirname + '/../',
+        //     args: [ data.msg ]
+        // }
+        // PythonShell.run('nlp.py', options, (err, results) => {
+        //     if (err) throw err;
+        //     // results is an array consisting of messages collected during execution
+        //     console.log(results[0]);
+        // })
+        let message = data.msg
+        let normailzed_message = nlp(data.msg).normalize().out('text')
+        let verbs = nlp(normailzed_message).verbs().out('array')
+        let nouns = nlp(normailzed_message).nouns().out('array')
+        let isQuestion = nlp(normailzed_message).questions().out('array').length > 0      
+        console.log(`🐱‍👤Verbs:\n${verbs}\n✨Nouns:\n${nouns}\n🙋‍Question:\n${isQuestion}`)    
+        
         socket.emit('reply', { message: data.msg })
     })
 })
